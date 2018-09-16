@@ -52,7 +52,27 @@ class SellAll extends PluginBase{
                             break;
 
                         case "all":
+                            $item = $sender->getInventory()->getItemInHand();
+                            $inventory = $sender->getInventory();
+                            $contents = $inventory->getContents();
+                            if(isset($this->cfg[$item->getID()])){
+                                $price = $this->cfg[$item->getID()];
+                                $count = 0;
+                                foreach($contents as $slot){
+                                    if($slot->getID() == $item->getId()){
+                                        $count = $count + $slot->getCount();
+                                        $inventory->remove($slot);
+                                    }
+                                }
+                                $inventory->sendContents($sender);
+                                $totalprice = $count * $price;
+                                EconomyAPI::getInstance()->addMoney($sender->getName(), (int)$totalprice);
+                                $sender->sendMessage(TextFormat::colorize("&a&lSuccess! &r&7sold &8".(string)$count." ".$item->getName()."(s) &7for &8$".(string)$totalprice));
+                                return true;
+                            }
+                            $sender->sendMessage(TextFormat::colorize("&c&lError: &r&7you can't sell this item"));
                             return true;
+                            break;
 
                         default:
                             $sender->sendMessage(TextFormat::colorize("&c&lError: &r&7please enter a valid argument"));
