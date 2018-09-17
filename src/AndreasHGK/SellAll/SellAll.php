@@ -22,6 +22,13 @@ class SellAll extends PluginBase{
         $this->cfg = $this->getConfig()->getAll();
 	}
 
+    public function replaceVars($str, array $vars) : string{
+        foreach($vars as $key => $value){
+            $str = str_replace("{" . $key . "}", $value, $str);
+        }
+        return $str;
+    }
+
 	public function onCommand(CommandSender $sender, Command $command, string $label, array $args) : bool{
         if(!($sender instanceof Player)){
             $sender->sendMessage(C::colorize("&cPlease execute this command in-game"));
@@ -30,7 +37,7 @@ class SellAll extends PluginBase{
 		switch($command->getName()){
 			case "sell":
                 if(!$sender->hasPermission("sellall.command")){
-                    $sender->sendMessage(TextFormat::colorize("&c&lError: &r&7you don't have permission to execute this command"));
+                    $sender->sendMessage(TextFormat::colorize($this->cfg["error.permission"]));
                     return true;
                 }
 				if(isset($args[0])){
@@ -44,10 +51,13 @@ class SellAll extends PluginBase{
                                 EconomyAPI::getInstance()->addMoney($sender->getName(), (int)$totalprice);
                                 $item->setCount($item->getCount() - (int)$count);
                                 $sender->getInventory()->setItemInHand($item);
-                                $sender->sendMessage(TextFormat::colorize("&a&lSuccess! &r&7sold &8".(string)$count." ".$item->getName()."(s) &7for &8$".(string)$totalprice));
+                                $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->cfg["success.sell"], array(
+                                    "AMOUNT" => (string)$count,
+                                    "ITEMNAME" => $item->getName(),
+                                    "MONEY" => (string)$totalprice))));
                                 return true;
                             }
-                            $sender->sendMessage(TextFormat::colorize("&c&lError: &r&7you can't sell this item"));
+                            $sender->sendMessage(TextFormat::colorize($this->cfg["error.not-found"]));
                             return true;
                             break;
 
@@ -67,20 +77,23 @@ class SellAll extends PluginBase{
                                 $inventory->sendContents($sender);
                                 $totalprice = $count * $price;
                                 EconomyAPI::getInstance()->addMoney($sender->getName(), (int)$totalprice);
-                                $sender->sendMessage(TextFormat::colorize("&a&lSuccess! &r&7sold &8".(string)$count." ".$item->getName()."(s) &7for &8$".(string)$totalprice));
+                                $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->cfg["success.sell"], array(
+                                    "AMOUNT" => (string)$count,
+                                    "ITEMNAME" => $item->getName(),
+                                    "MONEY" => (string)$totalprice))));
                                 return true;
                             }
-                            $sender->sendMessage(TextFormat::colorize("&c&lError: &r&7you can't sell this item"));
+                            $sender->sendMessage(TextFormat::colorize($this->cfg["error.not-found"]));
                             return true;
                             break;
 
                         default:
-                            $sender->sendMessage(TextFormat::colorize("&c&lError: &r&7please enter a valid argument"));
+                            $sender->sendMessage(TextFormat::colorize($this->cfg["error.argument"]));
                             return true;
 
                     }
                 }
-                $sender->sendMessage(TextFormat::colorize("&c&lError: &r&7please enter a valid argument"));
+                $sender->sendMessage(TextFormat::colorize($this->cfg["error.argument"]));
 				return true;
 			default:
 				return false;
