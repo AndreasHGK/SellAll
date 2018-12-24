@@ -1,7 +1,8 @@
 ###█▀▀ █▀▀ █░░ █░░ █▀▀█ █░░ █░░
 ##▀▀█ █▀▀ █░░ █░░ █▄▄█ █░░ █░░
 #▀▀▀ ▀▀▀ ▀▀▀ ▀▀▀ ▀░░▀ ▀▀▀ ▀▀▀
-
+#DO NOT CHANGE
+cfgversion: 1.1
 # MESSAGES
 #change the messages sent in this plugin
 
@@ -11,8 +12,13 @@ error.not-found: "&c&lError: &r&7you can't sell this item"
 
 error.argument: "&c&lError: &r&7please enter a valid argument"
 
-##use the variables:{AMOUNT}, {ITEMNAME} and {MONEY} and they will get replaced by their value.
+#use the variables:{AMOUNT}, {ITEMNAME} and {MONEY} and they will get replaced by their value.
 success.sell: "&a&lSuccess! &r&7sold &8{AMOUNT} {ITEMNAME} &7for &8${MONEY}"
+
+#the message when someone executes "/sell inventory"
+success.sell.inventory: "&a&lSuccess! &r&7sold your whole inventory for §8${MONEY}"
+
+error.no.sellables: "&c&lError: &r&7there's nothing in your inventory that you can sell"
 
 # CONFIG: Selling prices & sellable items
 #put all the ids and their price in here. (feel free to change everything)

@@ -15,11 +15,18 @@ use pocketmine\Player;
 class SellAll extends PluginBase{
 
     public $cfg;
+    public $cfgversion = 1.1;
 
 	public function onEnable() : void{
         @mkdir($this->getDataFolder());
         $this->saveDefaultConfig();
         $this->cfg = $this->getConfig()->getAll();
+        if(!isset($this->cfg["cfgversion"])){
+            $this->getLogger()->critical("config version outdated! please re-generate your config or this plugin might not work correctly.");
+        }
+        if($this->cfg["cfgversion"] != $this->cfgversion){
+            $this->getLogger()->critical("config version outdated! please re-generate your config or this plugin might not work correctly.");
+        }
 	}
 
     public function replaceVars($str, array $vars) : string{
@@ -84,6 +91,28 @@ class SellAll extends PluginBase{
                                 return true;
                             }
                             $sender->sendMessage(TextFormat::colorize($this->cfg["error.not-found"]));
+                            return true;
+                            break;
+
+                        case "inventory":
+                            $inv = $sender->getInventory()->getContents();
+                            $revenue = 0;
+                            foreach($inv as $item){
+                                if(isset($this->cfg[$item->getID()])){
+                                    $revenue = $revenue + ($item->getCount() * $this->cfg[$item->getID()]);
+                                }
+                            }
+                            foreach($inv as $item){
+                                if(isset($this->cfg[$item->getID()])){
+                                    $sender->getInventory()->remove($item);
+                                }
+                            }
+                            if($revenue <= 0){
+                                $sender->sendMessage(TextFormat::colorize($this->cfg["error.no.sellables"]));
+                                return true;
+                            }
+                            $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->cfg["success.sell.inventory"], array(
+                                "MONEY" => (string)$revenue))));
                             return true;
                             break;
 
