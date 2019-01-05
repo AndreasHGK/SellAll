@@ -94,6 +94,7 @@ class SellAll extends PluginBase{
                             return true;
                             break;
 
+						case "inv":
                         case "inventory":
                             $inv = $sender->getInventory()->getContents();
                             $revenue = 0;
@@ -111,6 +112,7 @@ class SellAll extends PluginBase{
                                 $sender->sendMessage(TextFormat::colorize($this->cfg["error.no.sellables"]));
                                 return true;
                             }
+                            EconomyAPI::getInstance()->addMoney($sender->getName(), (int)$revenue);
                             $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->cfg["success.sell.inventory"], array(
                                 "MONEY" => (string)$revenue))));
                             return true;
