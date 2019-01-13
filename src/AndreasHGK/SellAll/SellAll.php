@@ -55,7 +55,7 @@ class SellAll extends PluginBase{
                                 $price = $this->cfg[$item->getID()];
                                 $count = $item->getCount();
                                 $totalprice = $price * $count;
-                                EconomyAPI::getInstance()->addMoney($sender->getName(), (int)$totalprice);
+                                EconomyAPI::getInstance()->addMoney($sender->getName(), (float)$totalprice);
                                 $item->setCount($item->getCount() - (int)$count);
                                 $sender->getInventory()->setItemInHand($item);
                                 $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->cfg["success.sell"], array(
@@ -83,7 +83,7 @@ class SellAll extends PluginBase{
                                 }
                                 $inventory->sendContents($sender);
                                 $totalprice = $count * $price;
-                                EconomyAPI::getInstance()->addMoney($sender->getName(), (int)$totalprice);
+                                EconomyAPI::getInstance()->addMoney($sender->getName(), (float)$totalprice);
                                 $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->cfg["success.sell"], array(
                                     "AMOUNT" => (string)$count,
                                     "ITEMNAME" => $item->getName(),
@@ -112,7 +112,7 @@ class SellAll extends PluginBase{
                                 $sender->sendMessage(TextFormat::colorize($this->cfg["error.no.sellables"]));
                                 return true;
                             }
-                            EconomyAPI::getInstance()->addMoney($sender->getName(), (int)$revenue);
+                            EconomyAPI::getInstance()->addMoney($sender->getName(), (float)$revenue);
                             $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->cfg["success.sell.inventory"], array(
                                 "MONEY" => (string)$revenue))));
                             return true;
