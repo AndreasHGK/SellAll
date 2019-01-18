@@ -23,8 +23,7 @@ class SellAll extends PluginBase{
         $this->cfg = $this->getConfig()->getAll();
         if(!isset($this->cfg["cfgversion"])){
             $this->getLogger()->critical("config version outdated! please regenerate your config or this plugin might not work correctly.");
-        }
-        if($this->cfg["cfgversion"] != $this->cfgversion){
+        }elseif($this->cfg["cfgversion"] != $this->cfgversion){
             $this->getLogger()->critical("config version outdated! please regenerate your config or this plugin might not work correctly.");
         }
 	}
@@ -111,6 +110,24 @@ class SellAll extends PluginBase{
                             EconomyAPI::getInstance()->addMoney($sender->getName(), (int)$revenue);
                             $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->cfg["success.sell.inventory"], array(
                                 "MONEY" => (string)$revenue))));
+                            return true;
+                            break;
+
+                        case "reload":
+                            if($sender->hasPermission("sellall.reload")){
+                                $this->reloadConfig();
+                                $this->cfg = $this->getConfig()->getAll();
+                                if(!isset($this->cfg["cfgversion"])){
+                                    $this->getLogger()->critical("config version outdated! please regenerate your config or this plugin might not work correctly.");
+                                }elseif($this->cfg["cfgversion"] != $this->cfgversion){
+                                    $this->getLogger()->critical("config version outdated! please regenerate your config or this plugin might not work correctly.");
+                                }
+                                $sender->sendMessage(TextFormat::colorize($this->cfg["reload"]));
+                            }else{
+                                $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->cfg["error.argument"], array(
+                                    "ARGS" => $this->listArguments()))));
+                                return true;
+                            }
                             return true;
                             break;
 

@@ -15,9 +15,12 @@ commands:
 
 permissions:
  sellall:
-  default: true
+  default: op
   description: "SellALl root permission"
   children:
    sellall.command:
     default: true
     description: "Allows the use of /sell"
+   sellall.reload:
+    default: op
+    description: "Reloads the plugin"

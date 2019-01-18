@@ -6,6 +6,8 @@ cfgversion: 1.2
 # MESSAGES
 #change the messages sent in this plugin
 
+reload: "&e&lNotice: &r&7reloaded SellAll"
+
 error.permission: "&c&lError: &r&7you don't have permission to execute this command"
 
 error.not-found: "&c&lError: &r&7you can't sell this item"
