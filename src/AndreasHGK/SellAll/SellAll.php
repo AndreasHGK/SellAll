@@ -15,17 +15,17 @@ use pocketmine\Player;
 class SellAll extends PluginBase{
 
     public $cfg;
-    public $cfgversion = 1.1;
+    public $cfgversion = 1.2;
 
 	public function onEnable() : void{
         @mkdir($this->getDataFolder());
         $this->saveDefaultConfig();
         $this->cfg = $this->getConfig()->getAll();
         if(!isset($this->cfg["cfgversion"])){
-            $this->getLogger()->critical("config version outdated! please re-generate your config or this plugin might not work correctly.");
+            $this->getLogger()->critical("config version outdated! please regenerate your config or this plugin might not work correctly.");
         }
         if($this->cfg["cfgversion"] != $this->cfgversion){
-            $this->getLogger()->critical("config version outdated! please re-generate your config or this plugin might not work correctly.");
+            $this->getLogger()->critical("config version outdated! please regenerate your config or this plugin might not work correctly.");
         }
 	}
 
@@ -55,7 +55,7 @@ class SellAll extends PluginBase{
                                 $price = $this->cfg[$item->getID()];
                                 $count = $item->getCount();
                                 $totalprice = $price * $count;
-                                EconomyAPI::getInstance()->addMoney($sender->getName(), (float)$totalprice);
+                                EconomyAPI::getInstance()->addMoney($sender->getName(), (int)$totalprice);
                                 $item->setCount($item->getCount() - (int)$count);
                                 $sender->getInventory()->setItemInHand($item);
                                 $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->cfg["success.sell"], array(
@@ -83,7 +83,7 @@ class SellAll extends PluginBase{
                                 }
                                 $inventory->sendContents($sender);
                                 $totalprice = $count * $price;
-                                EconomyAPI::getInstance()->addMoney($sender->getName(), (float)$totalprice);
+                                EconomyAPI::getInstance()->addMoney($sender->getName(), (int)$totalprice);
                                 $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->cfg["success.sell"], array(
                                     "AMOUNT" => (string)$count,
                                     "ITEMNAME" => $item->getName(),
@@ -101,10 +101,6 @@ class SellAll extends PluginBase{
                             foreach($inv as $item){
                                 if(isset($this->cfg[$item->getID()])){
                                     $revenue = $revenue + ($item->getCount() * $this->cfg[$item->getID()]);
-                                }
-                            }
-                            foreach($inv as $item){
-                                if(isset($this->cfg[$item->getID()])){
                                     $sender->getInventory()->remove($item);
                                 }
                             }
@@ -112,23 +108,56 @@ class SellAll extends PluginBase{
                                 $sender->sendMessage(TextFormat::colorize($this->cfg["error.no.sellables"]));
                                 return true;
                             }
-                            EconomyAPI::getInstance()->addMoney($sender->getName(), (float)$revenue);
+                            EconomyAPI::getInstance()->addMoney($sender->getName(), (int)$revenue);
                             $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->cfg["success.sell.inventory"], array(
                                 "MONEY" => (string)$revenue))));
                             return true;
                             break;
 
                         default:
-                            $sender->sendMessage(TextFormat::colorize($this->cfg["error.argument"]));
+                            if(array_key_exists($args[0], $this->cfg["groups"])){
+                                $group = $this->cfg["groups"][$args[0]];
+
+                                $inv = $sender->getInventory()->getContents();
+                                $revenue = 0;
+                                foreach($inv as $item){
+                                    if(isset($this->cfg[$item->getID()])){
+                                        if(in_array($item->getId(), $group["items"]) || in_array($item->getName(), $group["items"])){
+                                            $revenue = $revenue + ($item->getCount() * $this->cfg[$item->getID()]);
+                                            $sender->getInventory()->remove($item);
+                                        }
+                                    }
+                                }
+                                if($revenue <= 0){
+                                    $sender->sendMessage(TextFormat::colorize($group["failed"]));
+                                    return true;
+                                }
+                                EconomyAPI::getInstance()->addMoney($sender->getName(), (int)$revenue);
+                                $sender->sendMessage(TextFormat::colorize($this->replaceVars($group["success"], array(
+                                    "MONEY" => (string)$revenue))));
+                                return true;
+                            }
+                            $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->cfg["error.argument"], array(
+                                "ARGS" => $this->listArguments()))));
                             return true;
 
                     }
                 }
-                $sender->sendMessage(TextFormat::colorize($this->cfg["error.argument"]));
+                $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->cfg["error.argument"], array(
+                    "ARGS" => $this->listArguments()))));
 				return true;
 			default:
 				return false;
 		}
 	}
+
+	public function listArguments() : string{
+	    $seperator = $this->cfg["seperator"];
+	    $args = "hand".$seperator."all".$seperator."inv";
+	    foreach($this->cfg["groups"] as $name => $group){
+	        $args = $args.$seperator.$name;
+        }
+        return $args;
+    }
 
 }
