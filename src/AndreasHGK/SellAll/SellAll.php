@@ -9,22 +9,34 @@ use pocketmine\command\CommandSender;
 use pocketmine\command\Command;
 use pocketmine\item\Item;
 use onebone\economyapi\EconomyAPI;
+use pocketmine\utils\Config;
 use pocketmine\utils\TextFormat;
 use pocketmine\Player;
 
 class SellAll extends PluginBase{
 
+    const CFGVERSION = 1.3;
+
     public $cfg;
-    public $cfgversion = 1.2;
+    public $msg;
+    public $msgfile;
 
 	public function onEnable() : void{
         @mkdir($this->getDataFolder());
         $this->saveDefaultConfig();
         $this->cfg = $this->getConfig()->getAll();
+        $this->saveResource("messages.yml");;
+        $this->msgfile = new Config($this->getDataFolder() . "messages.yml", Config::YAML, []);
+        $this->msg = $this->msgfile->getAll();
         if(!isset($this->cfg["cfgversion"])){
             $this->getLogger()->critical("config version outdated! please regenerate your config or this plugin might not work correctly.");
-        }elseif($this->cfg["cfgversion"] != $this->cfgversion){
+        }elseif($this->cfg["cfgversion"] != self::CFGVERSION){
             $this->getLogger()->critical("config version outdated! please regenerate your config or this plugin might not work correctly.");
+        }
+        if(!isset($this->msg["cfgversion"])){
+            $this->getLogger()->critical("messages version outdated! please regenerate your messages file or this plugin might not work correctly.");
+        }elseif($this->msg["cfgversion"] != self::CFGVERSION){
+            $this->getLogger()->critical("messages version outdated! please regenerate messages file config or this plugin might not work correctly.");
         }
 	}
 
@@ -36,34 +48,46 @@ class SellAll extends PluginBase{
     }
 
 	public function onCommand(CommandSender $sender, Command $command, string $label, array $args) : bool{
-        if(!($sender instanceof Player)){
-            $sender->sendMessage(C::colorize("&cPlease execute this command in-game"));
+        if(!($sender instanceof Player) && !(isset($args[0]) && $args[0] === "reload")){
+            $sender->sendMessage(TextFormat::colorize("&cPlease execute this command in-game"));
             return true;
         }
 		switch($command->getName()){
 			case "sell":
                 if(!$sender->hasPermission("sellall.command")){
-                    $sender->sendMessage(TextFormat::colorize($this->cfg["error.permission"]));
+                    $sender->sendMessage(TextFormat::colorize($this->msg["error.permission"]));
                     return true;
                 }
 				if(isset($args[0])){
 				    switch(strtolower($args[0])){
                         case "hand":
                             $item = $sender->getInventory()->getItemInHand();
-                            if(isset($this->cfg[$item->getID()])){
+                            if(isset($this->cfg[$item->getID().":".$item->getDamage()])){
+                                $price = $this->cfg[$item->getID().":".$item->getDamage()];
+                                $count = $item->getCount();
+                                $totalprice = $price * $count;
+                                EconomyAPI::getInstance()->addMoney($sender->getName(), (int)$totalprice);
+                                $item->setCount($item->getCount() - (int)$count);
+                                $sender->getInventory()->setItemInHand($item);
+                                $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->msg["success.sell"], array(
+                                    "AMOUNT" => (string)$count,
+                                    "ITEMNAME" => $item->getName(),
+                                    "MONEY" => (string)$totalprice))));
+                                return true;
+                            }elseif(isset($this->cfg[$item->getID()])){
                                 $price = $this->cfg[$item->getID()];
                                 $count = $item->getCount();
                                 $totalprice = $price * $count;
                                 EconomyAPI::getInstance()->addMoney($sender->getName(), (int)$totalprice);
                                 $item->setCount($item->getCount() - (int)$count);
                                 $sender->getInventory()->setItemInHand($item);
-                                $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->cfg["success.sell"], array(
+                                $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->msg["success.sell"], array(
                                     "AMOUNT" => (string)$count,
                                     "ITEMNAME" => $item->getName(),
                                     "MONEY" => (string)$totalprice))));
                                 return true;
                             }
-                            $sender->sendMessage(TextFormat::colorize($this->cfg["error.not-found"]));
+                            $sender->sendMessage(TextFormat::colorize($this->msg["error.not-found"]));
                             return true;
                             break;
 
@@ -71,7 +95,24 @@ class SellAll extends PluginBase{
                             $item = $sender->getInventory()->getItemInHand();
                             $inventory = $sender->getInventory();
                             $contents = $inventory->getContents();
-                            if(isset($this->cfg[$item->getID()])){
+                            if(isset($this->cfg[$item->getID().":".$item->getDamage()])){
+                                $price = $this->cfg[$item->getID().":".$item->getDamage()];
+                                $count = 0;
+                                foreach($contents as $slot){
+                                    if($slot->getID() == $item->getId()){
+                                        $count = $count + $slot->getCount();
+                                        $inventory->remove($slot);
+                                    }
+                                }
+                                $inventory->sendContents($sender);
+                                $totalprice = $count * $price;
+                                EconomyAPI::getInstance()->addMoney($sender->getName(), (int)$totalprice);
+                                $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->msg["success.sell"], array(
+                                    "AMOUNT" => (string)$count,
+                                    "ITEMNAME" => $item->getName(),
+                                    "MONEY" => (string)$totalprice))));
+                                return true;
+                            }elseif(isset($this->cfg[$item->getID()])){
                                 $price = $this->cfg[$item->getID()];
                                 $count = 0;
                                 foreach($contents as $slot){
@@ -83,13 +124,13 @@ class SellAll extends PluginBase{
                                 $inventory->sendContents($sender);
                                 $totalprice = $count * $price;
                                 EconomyAPI::getInstance()->addMoney($sender->getName(), (int)$totalprice);
-                                $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->cfg["success.sell"], array(
+                                $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->msg["success.sell"], array(
                                     "AMOUNT" => (string)$count,
                                     "ITEMNAME" => $item->getName(),
                                     "MONEY" => (string)$totalprice))));
                                 return true;
                             }
-                            $sender->sendMessage(TextFormat::colorize($this->cfg["error.not-found"]));
+                            $sender->sendMessage(TextFormat::colorize($this->msg["error.not-found"]));
                             return true;
                             break;
 
@@ -98,17 +139,20 @@ class SellAll extends PluginBase{
                             $inv = $sender->getInventory()->getContents();
                             $revenue = 0;
                             foreach($inv as $item){
-                                if(isset($this->cfg[$item->getID()])){
+                                if(isset($this->cfg[$item->getID().":".$item->getDamage()])){
+                                    $revenue = $revenue + ($item->getCount() * $this->cfg[$item->getID().":".$item->getDamage()]);
+                                    $sender->getInventory()->remove($item);
+                                }elseif(isset($this->cfg[$item->getID()])){
                                     $revenue = $revenue + ($item->getCount() * $this->cfg[$item->getID()]);
                                     $sender->getInventory()->remove($item);
                                 }
                             }
                             if($revenue <= 0){
-                                $sender->sendMessage(TextFormat::colorize($this->cfg["error.no.sellables"]));
+                                $sender->sendMessage(TextFormat::colorize($this->msg["error.no.sellables"]));
                                 return true;
                             }
                             EconomyAPI::getInstance()->addMoney($sender->getName(), (int)$revenue);
-                            $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->cfg["success.sell.inventory"], array(
+                            $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->msg["success.sell.inventory"], array(
                                 "MONEY" => (string)$revenue))));
                             return true;
                             break;
@@ -117,14 +161,21 @@ class SellAll extends PluginBase{
                             if($sender->hasPermission("sellall.reload")){
                                 $this->reloadConfig();
                                 $this->cfg = $this->getConfig()->getAll();
+                                $this->msgfile = new Config($this->getDataFolder() . "messages.yml", Config::YAML, []);
+                                $this->msg = $this->msgfile->getAll();
                                 if(!isset($this->cfg["cfgversion"])){
                                     $this->getLogger()->critical("config version outdated! please regenerate your config or this plugin might not work correctly.");
-                                }elseif($this->cfg["cfgversion"] != $this->cfgversion){
+                                }elseif($this->cfg["cfgversion"] != self::CFGVERSION){
                                     $this->getLogger()->critical("config version outdated! please regenerate your config or this plugin might not work correctly.");
                                 }
-                                $sender->sendMessage(TextFormat::colorize($this->cfg["reload"]));
+                                if(!isset($this->msg["cfgversion"])){
+                                    $this->getLogger()->critical("messages version outdated! please regenerate your messages file or this plugin might not work correctly.");
+                                }elseif($this->msg["cfgversion"] != self::CFGVERSION){
+                                    $this->getLogger()->critical("messages version outdated! please regenerate messages file config or this plugin might not work correctly.");
+                                }
+                                $sender->sendMessage(TextFormat::colorize($this->msg["reload"]));
                             }else{
-                                $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->cfg["error.argument"], array(
+                                $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->msg["error.argument"], array(
                                     "ARGS" => $this->listArguments()))));
                                 return true;
                             }
@@ -140,8 +191,13 @@ class SellAll extends PluginBase{
                                 foreach($inv as $item){
                                     if(isset($this->cfg[$item->getID()])){
                                         if(in_array($item->getId(), $group["items"]) || in_array($item->getName(), $group["items"])){
-                                            $revenue = $revenue + ($item->getCount() * $this->cfg[$item->getID()]);
-                                            $sender->getInventory()->remove($item);
+                                            if(isset($this->cfg[$item->getID().":".$item->getDamage()])){
+                                                $revenue = $revenue + ($item->getCount() * $this->cfg[$item->getID().":".$item->getDamage()]);
+                                                $sender->getInventory()->remove($item);
+                                            }elseif(isset($this->cfg[$item->getID()])){
+                                                $revenue = $revenue + ($item->getCount() * $this->cfg[$item->getID()]);
+                                                $sender->getInventory()->remove($item);
+                                            }
                                         }
                                     }
                                 }
@@ -154,13 +210,13 @@ class SellAll extends PluginBase{
                                     "MONEY" => (string)$revenue))));
                                 return true;
                             }
-                            $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->cfg["error.argument"], array(
+                            $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->msg["error.argument"], array(
                                 "ARGS" => $this->listArguments()))));
                             return true;
 
                     }
                 }
-                $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->cfg["error.argument"], array(
+                $sender->sendMessage(TextFormat::colorize($this->replaceVars($this->msg["error.argument"], array(
                     "ARGS" => $this->listArguments()))));
 				return true;
 			default:
@@ -169,7 +225,7 @@ class SellAll extends PluginBase{
 	}
 
 	public function listArguments() : string{
-	    $seperator = $this->cfg["seperator"];
+	    $seperator = $this->msg["separator"];
 	    $args = "hand".$seperator."all".$seperator."inv";
 	    foreach($this->cfg["groups"] as $name => $group){
 	        $args = $args.$seperator.$name;

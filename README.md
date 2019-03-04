@@ -9,3 +9,6 @@ The plugin will base the prices on what you put in **config.yml**. just add the 
 If you changed the config while the server is running you can do /sell reload. If you don't have perms it will look like the subcommand doesn't exist.
 
 The plugin will do the rest! Players need the `sellall.command` permission to use the /sell command.
+
+from 1.3.0:
+You can also sell items with specific meta. For instance, if you want to sell lapis for $7 you need to add `'351:4':7`. The '' is very important!
