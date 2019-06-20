@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AndreasHGK\SellAll;
 
+use pocketmine\item\ItemFactory;
 use pocketmine\plugin\PluginBase;
 use pocketmine\command\CommandSender;
 use pocketmine\command\Command;
@@ -20,6 +21,14 @@ class SellAll extends PluginBase{
     public $cfg;
     public $msg;
     public $msgfile;
+
+    public function getSellPrice(Item $item) : ?int{
+        return $this->cfg[$item->getID().":".$item->getDamage()] ?? $this->cfg[$item->getID()] ?? null;
+    }
+
+    public function isSellable(Item $item) : bool{
+        return $this->getSellPrice($item) !== null ? true : false;
+    }
 
 	public function onEnable() : void{
         @mkdir($this->getDataFolder());
