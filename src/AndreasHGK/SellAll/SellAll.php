@@ -22,7 +22,7 @@ class SellAll extends PluginBase{
     public $msg;
     public $msgfile;
 
-    public function getSellPrice(Item $item) : ?int{
+    public function getSellPrice(Item $item) : ?float {
         return $this->cfg[$item->getID().":".$item->getDamage()] ?? $this->cfg[$item->getID()] ?? null;
     }
 
