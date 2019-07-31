@@ -27,7 +27,7 @@ class SellAll extends PluginBase{
     }
 
     public function isSellable(Item $item) : bool{
-        return $this->getSellPrice($item) !== null ? true : false;
+      return $this->getSellPrice($item) !== null ? true : false;
     }
 
 	public function onEnable() : void{
