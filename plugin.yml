@@ -10,7 +10,7 @@ depend: ["EconomyAPI"]
 commands:
  sell:
   description: "§d§lSell command"
-  usage: "/sell all|hand|inventory"
+  usage: "/sell all|hand|inventory|i"
   permission: sellall.command
 
 permissions:
