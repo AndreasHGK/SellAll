@@ -142,10 +142,9 @@ class SellAll extends PluginBase{
                             $sender->sendMessage(TextFormat::colorize($this->msg["error.not-found"]));
                             return true;
                             break;
-
-						case "inv":						    
+						    
 						case "i":
-                        case "inventory":
+                        case "inv":
                             $inv = $sender->getInventory()->getContents();
                             $revenue = 0;
                             foreach($inv as $item){
@@ -236,7 +235,7 @@ class SellAll extends PluginBase{
 
 	public function listArguments() : string{
 	    $seperator = $this->msg["separator"];
-	    $args = "hand".$seperator."all".$seperator."inv";
+	    $args = "hand".$seperator."all".$seperator."i";
 	    foreach($this->cfg["groups"] as $name => $group){
 	        $args = $args.$seperator.$name;
         }
